@@ -1,0 +1,192 @@
+
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <title>ระบบ BMI นักเรียน - เวอร์ชันสมบูรณ์</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body class="bg-gray-100 p-4">
+<div class="max-w-7xl mx-auto bg-white p-6 rounded shadow">
+  <h1 class="text-3xl font-bold text-center mb-6">ระบบค้นหาข้อมูล BMI นักเรียน</h1>
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+    <input list="student_id_list" id="searchId" placeholder="เลขประจำตัว" class="p-2 border rounded" />
+    <input list="name_list" id="searchName" placeholder="ชื่อ" class="p-2 border rounded" />
+    <input list="class_list" id="searchClass" placeholder="ชั้น" class="p-2 border rounded" />
+    <input list="room_list" id="searchRoom" placeholder="ห้อง" class="p-2 border rounded" />
+    <input list="advisor1_list" id="searchAdvisor1" placeholder="ครูที่ปรึกษา 1" class="p-2 border rounded" />
+    <input list="advisor2_list" id="searchAdvisor2" placeholder="ครูที่ปรึกษา 2" class="p-2 border rounded" />
+  </div>
+
+  <div class="overflow-x-auto">
+    <table class="min-w-full bg-white border">
+      <thead>
+        <tr class="bg-gray-200">
+          <th class="p-2 border">เลขประจำตัว</th>
+          <th class="p-2 border">ชื่อ</th>
+          <th class="p-2 border">ชั้น</th>
+          <th class="p-2 border">ห้อง</th>
+          <th class="p-2 border">น้ำหนัก</th>
+          <th class="p-2 border">ส่วนสูง</th>
+          <th class="p-2 border">BMI</th>
+          <th class="p-2 border">แปลผล</th>
+          <th class="p-2 border">ครูที่ปรึกษา 1</th>
+          <th class="p-2 border">ครูที่ปรึกษา 2</th>
+        </tr>
+      </thead>
+      <tbody id="dataBody"></tbody>
+    </table>
+  </div>
+
+  <div class="mt-6 flex flex-wrap justify-between items-center gap-4">
+    <button onclick="showStats()" class="bg-blue-600 text-white px-4 py-2 rounded">ดูสถิติ</button>
+    <div>
+      <label for="advisorReport" class="block font-medium mb-2">เลือกครูที่ปรึกษาสำหรับรายงาน:</label>
+      <select id="advisorReport" class="p-2 border rounded">
+        <option value="">-- เลือกครูที่ปรึกษา --</option>
+      </select>
+      <button onclick="generatePDF()" class="ml-2 bg-green-600 text-white px-4 py-2 rounded">สร้างรายงาน PDF</button>
+    </div>
+  </div>
+
+  <div id="statsSection" class="mt-10 hidden">
+    <h2 class="text-2xl font-semibold mb-4">สถิติ BMI นักเรียน</h2>
+    <canvas id="bmiChart" width="400" height="200"></canvas>
+  </div>
+</div>
+
+<datalist id="student_id_list"></datalist>
+<datalist id="name_list"></datalist>
+<datalist id="class_list"></datalist>
+<datalist id="room_list"></datalist>
+<datalist id="advisor1_list"></datalist>
+<datalist id="advisor2_list"></datalist>
+
+<script>
+const API_KEY = "AIzaSyD-IbEa-_poD4yLCaS6S3iCFd07U3x54-o";
+const SHEET_ID = "1nR3b0kUrzFgRcGgdn1gF-tz-fZPEG08sbwjJr6H6qIE";
+const SHEET_NAME = "database";
+let allData = [];
+
+async function fetchData() {
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${SHEET_NAME}?key=${API_KEY}`;
+  const res = await fetch(url);
+  const data = await res.json();
+  const rows = data.values;
+  const headers = rows[0];
+  allData = rows.slice(1).map(row => Object.fromEntries(headers.map((h, i) => [h, row[i] || ""])));
+  renderTable(allData);
+  populateDatalists(allData);
+}
+
+function renderTable(data) {
+  const body = document.getElementById("dataBody");
+  body.innerHTML = data.map(row => `
+    <tr>
+      <td class="p-2 border">${row.student_id}</td>
+      <td class="p-2 border">${row.name}</td>
+      <td class="p-2 border">${row.class}</td>
+      <td class="p-2 border">${row.room}</td>
+      <td class="p-2 border">${row.weight}</td>
+      <td class="p-2 border">${row.height}</td>
+      <td class="p-2 border">${row.bmi}</td>
+      <td class="p-2 border">${row.result}</td>
+      <td class="p-2 border">${row.advisor_1}</td>
+      <td class="p-2 border">${row.advisor_2}</td>
+    </tr>`).join("");
+}
+
+function populateDatalists(data) {
+  const fields = {
+    student_id: "student_id_list",
+    name: "name_list",
+    class: "class_list",
+    room: "room_list",
+    advisor_1: "advisor1_list",
+    advisor_2: "advisor2_list"
+  };
+  for (const [key, listId] of Object.entries(fields)) {
+    const unique = [...new Set(data.map(d => d[key]))].sort();
+    const datalist = document.getElementById(listId);
+    datalist.innerHTML = unique.map(val => `<option value="${val}">`).join("");
+  }
+
+  const advisorSelect = document.getElementById("advisorReport");
+  const advisorSet = new Set(data.map(d => d.advisor_1).concat(data.map(d => d.advisor_2)));
+  Array.from(advisorSet).filter(Boolean).sort().forEach(name => {
+    const option = document.createElement("option");
+    option.value = name;
+    option.text = name;
+    advisorSelect.appendChild(option);
+  });
+}
+
+document.querySelectorAll("input").forEach(input => {
+  input.addEventListener("input", () => {
+    const filters = {
+      student_id: document.getElementById("searchId").value,
+      name: document.getElementById("searchName").value,
+      class: document.getElementById("searchClass").value,
+      room: document.getElementById("searchRoom").value,
+      advisor_1: document.getElementById("searchAdvisor1").value,
+      advisor_2: document.getElementById("searchAdvisor2").value
+    };
+    const filtered = allData.filter(row => {
+      return (!filters.student_id || row.student_id.includes(filters.student_id)) &&
+             (!filters.name || row.name.includes(filters.name)) &&
+             (!filters.class || row.class.includes(filters.class)) &&
+             (!filters.room || row.room.includes(filters.room)) &&
+             (!filters.advisor_1 || row.advisor_1.includes(filters.advisor_1)) &&
+             (!filters.advisor_2 || row.advisor_2.includes(filters.advisor_2));
+    });
+    renderTable(filtered);
+  });
+});
+
+function showStats() {
+  document.getElementById("statsSection").classList.remove("hidden");
+  const count = { "ปกติ": 0, "ต่ำกว่าเกณฑ์": 0, "เกินเกณฑ์": 0, "อ้วน": 0 };
+  allData.forEach(r => { if (count[r.result] !== undefined) count[r.result]++; });
+  new Chart(document.getElementById("bmiChart"), {
+    type: 'bar',
+    data: {
+      labels: Object.keys(count),
+      datasets: [{
+        label: 'จำนวนนักเรียน',
+        backgroundColor: ['#3b82f6','#10b981','#f59e0b','#ef4444'],
+        data: Object.values(count)
+      }]
+    }
+  });
+}
+
+function generatePDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  const advisor = document.getElementById("advisorReport").value;
+  const now = new Date().toLocaleString("th-TH");
+  doc.setFont("THSarabun", "normal");
+  doc.setFontSize(16);
+  doc.text("โรงเรียนลำปาววิทยาคม", 10, 10);
+  doc.text(`วันที่ออกรายงาน: ${now}`, 10, 20);
+  const tableData = allData.map(r => [r.student_id, r.name, r.class, r.room, r.weight, r.height, r.bmi, r.result]);
+  doc.autoTable({
+    head: [["เลขประจำตัว", "ชื่อ", "ชั้น", "ห้อง", "น้ำหนัก", "ส่วนสูง", "BMI", "แปลผล"]],
+    body: tableData,
+    startY: 30,
+    styles: { font: "THSarabun", fontSize: 14 }
+  });
+  const endY = doc.lastAutoTable.finalY + 15;
+  doc.text(`ครูที่ปรึกษา: ${advisor}`, 10, endY);
+  doc.text("ลงชื่อ: ..............................................................", 10, endY + 15);
+  doc.save("รายงานข้อมูลนักเรียน.pdf");
+}
+
+fetchData();
+</script>
+</body>
+</html>
