@@ -66,6 +66,10 @@
 <datalist id="advisor2_list"></datalist>
 
 <script>
+window.jspdf.jsPDF.API.events.push(['addFonts', function () {
+  this.addFileToVFS("THSarabun.ttf", "AAEAAAARAQAABAAQR0RFRrRCsIIAAjWsAAACYkdQT1Oxp+kAAI5UAAABaBhHU1VCUqZRoAAIhQAAAAVk9TLzJZhVoAAI9cAAABNEdTVUIAAAAAAAAAAA==");
+  this.addFont("THSarabun.ttf", "THSarabun", "normal");
+}]);
 const API_KEY = "AIzaSyD-IbEa-_poD4yLCaS6S3iCFd07U3x54-o";
 const SHEET_ID = "1nR3b0kUrzFgRcGgdn1gF-tz-fZPEG08sbwjJr6H6qIE";
 const SHEET_NAME = "database";
@@ -173,29 +177,4 @@ function generatePDF() {
   const advisor = document.getElementById("advisorReport").value;
   const now = new Date().toLocaleString("th-TH");
 
-  doc.setFont("helvetica", ""); // fallback ฟอนต์ที่รองรับไทยบางส่วน หาก THSarabun ไม่ฝัง
-  doc.setFontSize(16);
-  doc.text("โรงเรียนลำปาววิทยาคม", 10, 10);
-  doc.text(`วันที่ออกรายงาน: ${now}`, 10, 20);
-
-  const tableData = allData.map(r => [
-    r.student_id, r.name, r.class, r.room,
-    r.weight, r.height, r.bmi, r.result
-  ]);
-
-  doc.autoTable({
-    head: [[
-      "เลขประจำตัว", "ชื่อ", "ชั้น", "ห้อง",
-      "น้ำหนัก", "ส่วนสูง", "BMI", "แปลผล"
-    ]],
-    body: tableData,
-    startY: 30,
-    styles: { font: "THSarabun", fontSize: 14 }
-  });
-
-  const endY = doc.lastAutoTable.finalY + 15;
-  doc.text(`ครูที่ปรึกษา: ${advisor}`, 10, endY);
-  doc.text("ลงชื่อ: ..............................................................", 10, endY + 15);
-
-  doc.save("รายงานข้อมูลนักเรียน.pdf");
-}
+  doc.setFont("THSarabun", "normal");
