@@ -20,6 +20,7 @@
     <input list="advisor1_list" id="searchAdvisor1" placeholder="ครูที่ปรึกษา 1" class="p-2 border rounded" />
     <input list="advisor2_list" id="searchAdvisor2" placeholder="ครูที่ปรึกษา 2" class="p-2 border rounded" />
   </div>
+
   <div class="overflow-x-auto">
     <table class="min-w-full bg-white border">
       <thead>
@@ -39,6 +40,7 @@
       <tbody id="dataBody"></tbody>
     </table>
   </div>
+
   <div class="mt-6 flex flex-wrap justify-between items-center gap-4">
     <button onclick="showStats()" class="bg-blue-600 text-white px-4 py-2 rounded">ดูสถิติ</button>
     <div>
@@ -49,22 +51,26 @@
       <button onclick="generatePDF()" class="ml-2 bg-green-600 text-white px-4 py-2 rounded">สร้างรายงาน PDF</button>
     </div>
   </div>
+
   <div id="statsSection" class="mt-10 hidden">
     <h2 class="text-2xl font-semibold mb-4">สถิติ BMI นักเรียน</h2>
     <canvas id="bmiChart" width="400" height="200"></canvas>
   </div>
 </div>
+
 <datalist id="student_id_list"></datalist>
 <datalist id="name_list"></datalist>
 <datalist id="class_list"></datalist>
 <datalist id="room_list"></datalist>
 <datalist id="advisor1_list"></datalist>
 <datalist id="advisor2_list"></datalist>
+
 <script>
 window.jspdf.jsPDF.API.events.push(['addFonts', function () {
   this.addFileToVFS("THSarabun.ttf", "AAEAAAARAQAABAAQR0RFRrRCsIIAAjWsAAACYkdQT1Oxp+kAAI5UAAABaBhHU1VCUqZRoAAIhQAAAAVk9TLzJZhVoAAI9cAAABNEdTVUIAAAAAAAAAAA==");
   this.addFont("THSarabun.ttf", "THSarabun", "normal");
 }]);
+
 const API_KEY = "AIzaSyD-IbEa-_poD4yLCaS6S3iCFd07U3x54-o";
 const SHEET_ID = "1nR3b0kUrzFgRcGgdn1gF-tz-fZPEG08sbwjJr6H6qIE";
 const SHEET_NAME = "database";
@@ -167,14 +173,17 @@ function generatePDF() {
   const doc = new jsPDF();
   const advisor = document.getElementById("advisorReport").value;
   const now = new Date().toLocaleString("th-TH");
+
   doc.setFont("THSarabun", "normal");
   doc.setFontSize(16);
   doc.text("โรงเรียนลำปาววิทยาคม", 10, 10);
   doc.text(`วันที่ออกรายงาน: ${now}`, 10, 20);
+
   const tableData = allData.map(r => [
     r.student_id, r.name, r.class, r.room,
     r.weight, r.height, r.bmi, r.result
   ]);
+
   doc.autoTable({
     head: [[
       "เลขประจำตัว", "ชื่อ", "ชั้น", "ห้อง",
@@ -184,9 +193,11 @@ function generatePDF() {
     startY: 30,
     styles: { font: "THSarabun", fontSize: 14 }
   });
+
   const endY = doc.lastAutoTable.finalY + 15;
   doc.text(`ครูที่ปรึกษา: ${advisor}`, 10, endY);
   doc.text("ลงชื่อ: ..............................................................", 10, endY + 15);
+
   doc.save("รายงานข้อมูลนักเรียน.pdf");
 }
 
