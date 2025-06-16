@@ -80,6 +80,7 @@ async function fetchData() {
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${SHEET_NAME}?key=${API_KEY}`;
   const res = await fetch(url);
   const data = await res.json();
+  if (!data.values || data.values.length < 2) return;
   const rows = data.values;
   const headers = rows[0];
   allData = rows.slice(1).map(row => Object.fromEntries(headers.map((h, i) => [h, row[i] || ""])));
@@ -160,8 +161,25 @@ function showStats() {
     "โรคอ้วนระดับ 1": 0,
     "โรคอ้วนระดับ 2 / อันตราย": 0
   };
-  
-  
+  allData.forEach(r => { if (r.result in count) count[r.result]++; });
+  const ctx = document.getElementById("bmiChart");
+  if (ctx.chartInstance) ctx.chartInstance.destroy();
+  ctx.chartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: Object.keys(count),
+      datasets: [{
+        label: 'จำนวนนักเรียน',
+        backgroundColor: ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6'],
+        data: Object.values(count)
+      }]
+    },
+    options: {
+      scales: {
+        y: { beginAtZero: true, ticks: { precision: 0 } }
+      }
+    }
+  });
 }
 
 function generatePDF() {
@@ -181,10 +199,7 @@ function generatePDF() {
   ]);
 
   doc.autoTable({
-    head: [[
-      "เลขประจำตัว", "ชื่อ", "ชั้น", "ห้อง",
-      "น้ำหนัก", "ส่วนสูง", "BMI", "แปลผล"
-    ]],
+    head: [["เลขประจำตัว", "ชื่อ", "ชั้น", "ห้อง", "น้ำหนัก", "ส่วนสูง", "BMI", "แปลผล"]],
     body: tableData,
     startY: 30,
     styles: { font: "THSarabun", fontSize: 14 }
