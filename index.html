@@ -5,7 +5,6 @@
   <title>ระบบ BMI นักเรียน - เวอร์ชันสมบูรณ์</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 </head>
@@ -47,12 +46,9 @@
       <select id="advisorReport" class="p-2 border rounded">
         <option value="">-- เลือกครูที่ปรึกษา --</option>
       </select>
-      <button onclick="generatePDF()" class="ml-2 bg-green-600 text-white px-4 py-2 rounded">รายงานครูที่ปรึกษา</button>
-      <button onclick="generateClassRoomPDF()" class="ml-2 bg-purple-600 text-white px-4 py-2 rounded">รายงานชั้น/ห้อง</button>
+      <button onclick="generatePDF()" class="ml-2 bg-green-600 text-white px-4 py-2 rounded">สร้างรายงาน PDF</button>
     </div>
   </div>
-
-  <canvas id="bmiChart" class="mt-10"></canvas>
 </div>
 
 <datalist id="student_id_list"></datalist>
@@ -63,11 +59,15 @@
 <datalist id="advisor2_list"></datalist>
 
 <script>
+window.jspdf.jsPDF.API.events.push(['addFonts', function () {
+  this.addFileToVFS("THSarabun.ttf", "AAEAAAARAQAABAAQR0RFRrRCsIIAAjWsAAACYkdQT1Oxp+kAAI5UAAABaBhHU1VCUqZRoAAIhQAAAAVk9TLzJZhVoAAI9cAAABNEdTVUIAAAAAAAAAAA==");
+  this.addFont("THSarabun.ttf", "THSarabun", "normal");
+}]);
 
 const API_KEY = "AIzaSyD-IbEa-_poD4yLCaS6S3iCFd07U3x54-o";
 const SHEET_ID = "1nR3b0kUrzFgRcGgdn1gF-tz-fZPEG08sbwjJr6H6qIE";
 const SHEET_NAME = "database";
-let allData = [], filteredData = [];
+let allData = [];
 
 async function fetchData() {
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${SHEET_NAME}?key=${API_KEY}`;
@@ -82,7 +82,6 @@ async function fetchData() {
 }
 
 function renderTable(data) {
-  filteredData = data;
   const body = document.getElementById("dataBody");
   body.innerHTML = data.map(row => `
     <tr>
@@ -97,7 +96,6 @@ function renderTable(data) {
       <td class="p-2 border">${row.advisor_1}</td>
       <td class="p-2 border">${row.advisor_2}</td>
     </tr>`).join("");
-  updateChart();
 }
 
 function populateDatalists(data) {
@@ -125,56 +123,6 @@ function populateDatalists(data) {
   });
 }
 
-document.querySelectorAll("input").forEach(input => {
-  input.addEventListener("input", () => {
-    const filters = {
-      student_id: document.getElementById("searchId").value,
-      name: document.getElementById("searchName").value,
-      class: document.getElementById("searchClass").value,
-      room: document.getElementById("searchRoom").value,
-      advisor_1: document.getElementById("searchAdvisor1").value,
-      advisor_2: document.getElementById("searchAdvisor2").value
-    };
-    const filtered = allData.filter(row => {
-      return (!filters.student_id || row.student_id.includes(filters.student_id)) &&
-             (!filters.name || row.name.includes(filters.name)) &&
-             (!filters.class || row.class.includes(filters.class)) &&
-             (!filters.room || row.room.includes(filters.room)) &&
-             (!filters.advisor_1 || row.advisor_1.includes(filters.advisor_1)) &&
-             (!filters.advisor_2 || row.advisor_2.includes(filters.advisor_2));
-    });
-    renderTable(filtered);
-  });
-});
-
-function updateChart() {
-  const ctx = document.getElementById("bmiChart");
-  if (ctx.chartInstance) ctx.chartInstance.destroy();
-
-  const count = {};
-  filteredData.forEach(r => {
-    const label = r.result || "ไม่ระบุ";
-    count[label] = (count[label] || 0) + 1;
-  });
-
-  const chart = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: Object.keys(count),
-      datasets: [{
-        label: 'จำนวน',
-        data: Object.values(count),
-        backgroundColor: '#3b82f6'
-      }]
-    },
-    options: {
-      responsive: true,
-      scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
-    }
-  });
-  ctx.chartInstance = chart;
-}
-
 function generatePDF() {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
@@ -183,7 +131,7 @@ function generatePDF() {
 
   const filtered = allData.filter(r => r.advisor_1 === advisor || r.advisor_2 === advisor);
 
-  doc.setFont("helvetica", "normal");
+  doc.setFont("THSarabun", "normal");
   doc.setFontSize(16);
   doc.text("โรงเรียนลำปาววิทยาคม", 10, 10);
   doc.text(`วันที่ออกรายงาน: ${now}`, 10, 20);
@@ -198,7 +146,7 @@ function generatePDF() {
     head: [["เลขประจำตัว", "ชื่อ", "ชั้น", "ห้อง", "น้ำหนัก", "ส่วนสูง", "BMI", "แปลผล"]],
     body: tableData,
     startY: 40,
-    styles: { font: "helvetica", fontSize: 14 }
+    styles: { font: "THSarabun", fontSize: 14 }
   });
 
   const summary = {};
@@ -214,44 +162,6 @@ function generatePDF() {
   doc.text("ลงชื่อ: ..............................................................", 10, endY + 30);
 
   doc.save("รายงานข้อมูลนักเรียน.pdf");
-}
-
-function generateClassRoomPDF() {
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-  const now = new Date().toLocaleString("th-TH");
-
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(16);
-  doc.text("โรงเรียนลำปาววิทยาคม", 10, 10);
-  doc.text(`วันที่ออกรายงาน: ${now}`, 10, 20);
-  doc.text("รายงานตามผลการกรองข้อมูล (ชั้น/ห้อง)", 10, 30);
-
-  const tableData = filteredData.map(r => [
-    r.student_id, r.name, r.class, r.room,
-    r.weight, r.height, r.bmi, r.result
-  ]);
-
-  doc.autoTable({
-    head: [["เลขประจำตัว", "ชื่อ", "ชั้น", "ห้อง", "น้ำหนัก", "ส่วนสูง", "BMI", "แปลผล"]],
-    body: tableData,
-    startY: 40,
-    styles: { font: "THSarabun", fontSize: 14 }
-  });
-
-  const summary = {};
-  filteredData.forEach(r => {
-    const label = r.result || "ไม่ระบุ";
-    summary[label] = (summary[label] || 0) + 1;
-  });
-  const summaryText = Object.entries(summary).map(([label, num]) => `${label}: ${num} คน`).join("\n");
-
-  const endY = doc.lastAutoTable.finalY + 10;
-  doc.text("สรุปผลการแปลผล BMI:", 10, endY);
-  doc.text(summaryText, 10, endY + 10);
-  doc.text("ลงชื่อ: ..............................................................", 10, endY + 30);
-
-  doc.save("รายงานข้อมูลนักเรียน_ตามห้อง.pdf");
 }
 
 fetchData();
