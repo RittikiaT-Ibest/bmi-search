@@ -153,7 +153,39 @@ document.querySelectorAll("input").forEach(input => {
 
 function showStats() {
   document.getElementById("statsSection").classList.remove("hidden");
-  const count = { "ปกติ": 0, "ต่ำกว่าเกณฑ์": 0, "เกินเกณฑ์": 0, "อ้วน": 0 };
+  const count = { "น้ำหนักน้อยเกินไป": 0, "น้ำหนักปกติ": 0, "ท้วม / น้ำหนักเกิน": 0, "โรคอ้วนระดับ 1": 0, "โรคอ้วนระดับ 2 / อันตราย": 0 };
+  const filteredData = allData.filter(r => r.result in count);
+  filteredData.forEach(r => { count[r.result]++; });
+
+  const chartCanvas = document.getElementById("bmiChart");
+  if (chartCanvas.chartInstance) {
+    chartCanvas.chartInstance.destroy();
+  }
+
+  const chart = new Chart(chartCanvas, {
+    type: 'bar',
+    data: {
+      labels: Object.keys(count),
+      datasets: [{
+        label: 'จำนวนนักเรียน',
+        backgroundColor: ['#3b82f6','#10b981','#f59e0b','#ef4444'],
+        data: Object.values(count)
+      }]
+    },
+    options: {
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            precision: 0
+          }
+        }
+      }
+    }
+  });
+
+  chartCanvas.chartInstance = chart;
+};
   allData.forEach(r => { if (count[r.result] !== undefined) count[r.result]++; });
   new Chart(document.getElementById("bmiChart"), {
     type: 'bar',
