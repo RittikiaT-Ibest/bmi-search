@@ -5,7 +5,6 @@
   <title>ระบบ BMI นักเรียน - เวอร์ชันสมบูรณ์</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 </head>
@@ -42,7 +41,6 @@
   </div>
 
   <div class="mt-6 flex flex-wrap justify-between items-center gap-4">
-    <button onclick="showStats()" class="bg-blue-600 text-white px-4 py-2 rounded">ดูสถิติ</button>
     <div>
       <label for="advisorReport" class="block font-medium mb-2">เลือกครูที่ปรึกษาสำหรับรายงาน:</label>
       <select id="advisorReport" class="p-2 border rounded">
@@ -52,9 +50,9 @@
     </div>
   </div>
 
-  <div id="statsSection" class="mt-10 hidden">
-    <h2 class="text-2xl font-semibold mb-4">สถิติ BMI นักเรียน</h2>
-    <canvas id="bmiChart" width="400" height="200"></canvas>
+  <div id="summarySection" class="mt-10 hidden">
+    <h2 class="text-2xl font-semibold mb-4">สรุปผลการแปลผล BMI</h2>
+    <ul id="summaryList" class="list-disc pl-5 text-lg"></ul>
   </div>
 </div>
 
@@ -86,6 +84,7 @@ async function fetchData() {
   allData = rows.slice(1).map(row => Object.fromEntries(headers.map((h, i) => [h, row[i] || ""])));
   renderTable(allData);
   populateDatalists(allData);
+  showSummary();
 }
 
 function renderTable(data) {
@@ -130,56 +129,15 @@ function populateDatalists(data) {
   });
 }
 
-document.querySelectorAll("input").forEach(input => {
-  input.addEventListener("input", () => {
-    const filters = {
-      student_id: document.getElementById("searchId").value,
-      name: document.getElementById("searchName").value,
-      class: document.getElementById("searchClass").value,
-      room: document.getElementById("searchRoom").value,
-      advisor_1: document.getElementById("searchAdvisor1").value,
-      advisor_2: document.getElementById("searchAdvisor2").value
-    };
-    const filtered = allData.filter(row => {
-      return (!filters.student_id || row.student_id.includes(filters.student_id)) &&
-             (!filters.name || row.name.includes(filters.name)) &&
-             (!filters.class || row.class.includes(filters.class)) &&
-             (!filters.room || row.room.includes(filters.room)) &&
-             (!filters.advisor_1 || row.advisor_1.includes(filters.advisor_1)) &&
-             (!filters.advisor_2 || row.advisor_2.includes(filters.advisor_2));
-    });
-    renderTable(filtered);
+function showSummary() {
+  const count = {};
+  allData.forEach(r => {
+    const label = r.result || "ไม่ระบุ";
+    count[label] = (count[label] || 0) + 1;
   });
-});
-
-function showStats() {
-  document.getElementById("statsSection").classList.remove("hidden");
-  const count = {
-    "น้ำหนักน้อยเกินไป": 0,
-    "น้ำหนักปกติ": 0,
-    "ท้วม / น้ำหนักเกิน": 0,
-    "โรคอ้วนระดับ 1": 0,
-    "โรคอ้วนระดับ 2 / อันตราย": 0
-  };
-  allData.forEach(r => { if (r.result in count) count[r.result]++; });
-  const ctx = document.getElementById("bmiChart");
-  if (ctx.chartInstance) ctx.chartInstance.destroy();
-  ctx.chartInstance = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: Object.keys(count),
-      datasets: [{
-        label: 'จำนวนนักเรียน',
-        backgroundColor: ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6'],
-        data: Object.values(count)
-      }]
-    },
-    options: {
-      scales: {
-        y: { beginAtZero: true, ticks: { precision: 0 } }
-      }
-    }
-  });
+  const list = document.getElementById("summaryList");
+  list.innerHTML = Object.entries(count).map(([label, num]) => `<li>${label}: ${num} คน</li>`).join("");
+  document.getElementById("summarySection").classList.remove("hidden");
 }
 
 function generatePDF() {
@@ -205,9 +163,19 @@ function generatePDF() {
     styles: { font: "THSarabun", fontSize: 14 }
   });
 
+  const summary = {};
+  allData.forEach(r => {
+    const label = r.result || "ไม่ระบุ";
+    summary[label] = (summary[label] || 0) + 1;
+  });
+  const summaryText = Object.entries(summary).map(([label, num]) => `${label}: ${num} คน`).join("\n");
+
   const endY = doc.lastAutoTable.finalY + 15;
-  doc.text(`ครูที่ปรึกษา: ${advisor}`, 10, endY);
-  doc.text("ลงชื่อ: ..............................................................", 10, endY + 15);
+  doc.text("สรุปผลการแปลผล BMI:", 10, endY);
+  doc.text(summaryText, 10, endY + 10);
+
+  doc.text(`ครูที่ปรึกษา: ${advisor}`, 10, endY + 30);
+  doc.text("ลงชื่อ: ..............................................................", 10, endY + 45);
 
   doc.save("รายงานข้อมูลนักเรียน.pdf");
 }
