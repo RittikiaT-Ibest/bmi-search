@@ -66,69 +66,7 @@
 <datalist id="advisor2_list"></datalist>
 
 <script>
-const API_KEY = "AIzaSyD-IbEa-_poD4yLCaS6S3iCFd07U3x54-o";
-const SHEET_ID = "1nR3b0kUrzFgRcGgdn1gF-tz-fZPEG08sbwjJr6H6qIE";
-const SHEET_NAME = "database";
-let allData = [];
-
-async function fetchData() {
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${SHEET_NAME}?key=${API_KEY}`;
-  const res = await fetch(url);
-  const data = await res.json();
-  const rows = data.values;
-  const headers = rows[0];
-  allData = rows.slice(1).map(row => Object.fromEntries(headers.map((h, i) => [h, row[i] || ""])));
-  renderTable(allData);
-  populateDatalists(allData);
-}
-
-function renderTable(data) {
-  const body = document.getElementById("dataBody");
-  body.innerHTML = data.map(row => `
-    <tr>
-      <td class="p-2 border">${row.student_id}</td>
-      <td class="p-2 border">${row.name}</td>
-      <td class="p-2 border">${row.class}</td>
-      <td class="p-2 border">${row.room}</td>
-      <td class="p-2 border">${row.weight}</td>
-      <td class="p-2 border">${row.height}</td>
-      <td class="p-2 border">${row.bmi}</td>
-      <td class="p-2 border">${row.result}</td>
-      <td class="p-2 border">${row.advisor_1}</td>
-      <td class="p-2 border">${row.advisor_2}</td>
-    </tr>`).join("");
-}
-
-  let allData = [];
-
-async function fetchData() {
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/1nR3b0kUrzFgRcGgdn1gF-tz-fZPEG08sbwjJr6H6qIE/values/database?key=AIzaSyD-IbEa-_poD4yLCaS6S3iCFd07U3x54-o`;
-  const res = await fetch(url);
-  const data = await res.json();
-  const rows = data.values;
-  const headers = rows[0];
-  allData = rows.slice(1).map(row => Object.fromEntries(headers.map((h, i) => [h, row[i] || ""])));
-  renderTable(allData);
-  populateDatalists(allData);
-}
-
-function renderTable(data) {
-  const body = document.getElementById("dataBody");
-  body.innerHTML = data.map(row => `
-    <tr>
-      <td class="p-2 border">${row.student_id}</td>
-      <td class="p-2 border">${row.name}</td>
-      <td class="p-2 border">${row.class}</td>
-      <td class="p-2 border">${row.room}</td>
-      <td class="p-2 border">${row.weight}</td>
-      <td class="p-2 border">${row.height}</td>
-      <td class="p-2 border">${row.bmi}</td>
-      <td class="p-2 border">${row.result}</td>
-      <td class="p-2 border">${row.advisor_1}</td>
-      <td class="p-2 border">${row.advisor_2}</td>
-    </tr>`).join("");
-} 
-  // [2/3] กรองข้อมูล + เติม datalist + สร้างกราฟ
+// [2/3] กรองข้อมูล + เติม datalist + สร้างกราฟ
 function populateDatalists(data) {
   const fields = {
     student_id: "student_id_list",
@@ -192,13 +130,6 @@ function showStats() {
     }
   });
 }
-<script>
-  const { jsPDF } = window.jspdf;
-  jsPDF.API.events.push(['addFonts', function () {
-    this.addFileToVFS("THSarabun.ttf", "base64-encoded-font-here");
-    this.addFont("THSarabun.ttf", "THSarabun", "normal");
-  }]);
-</script>
 
 fetchData();
 
@@ -234,6 +165,3 @@ function generatePDF() {
 
   doc.save("รายงานข้อมูลนักเรียน.pdf");
 }
-</script> 
-</body>
-</html>
