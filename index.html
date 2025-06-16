@@ -63,10 +63,6 @@
 <datalist id="advisor2_list"></datalist>
 
 <script>
-window.jspdf.jsPDF.API.events.push(['addFonts', function () {
-  this.addFileToVFS("THSarabun.ttf", "AAEAAAARAQAABAAQR0RFRrRCsIIAAjWsAAACYkdQT1Oxp+kAAI5UAAABaBhHU1VCUqZRoAAIhQAAAAVk9TLzJZhVoAAI9cAAABNEdTVUIAAAAAAAAAAA==");
-  this.addFont("THSarabun.ttf", "THSarabun", "normal");
-}]);
 
 const API_KEY = "AIzaSyD-IbEa-_poD4yLCaS6S3iCFd07U3x54-o";
 const SHEET_ID = "1nR3b0kUrzFgRcGgdn1gF-tz-fZPEG08sbwjJr6H6qIE";
@@ -187,7 +183,7 @@ function generatePDF() {
 
   const filtered = allData.filter(r => r.advisor_1 === advisor || r.advisor_2 === advisor);
 
-  doc.setFont("THSarabun", "normal");
+  doc.setFont("helvetica", "normal");
   doc.setFontSize(16);
   doc.text("โรงเรียนลำปาววิทยาคม", 10, 10);
   doc.text(`วันที่ออกรายงาน: ${now}`, 10, 20);
@@ -225,7 +221,7 @@ function generateClassRoomPDF() {
   const doc = new jsPDF();
   const now = new Date().toLocaleString("th-TH");
 
-  doc.setFont("THSarabun", "normal");
+  doc.setFont("helvetica", "normal");
   doc.setFontSize(16);
   doc.text("โรงเรียนลำปาววิทยาคม", 10, 10);
   doc.text(`วันที่ออกรายงาน: ${now}`, 10, 20);
