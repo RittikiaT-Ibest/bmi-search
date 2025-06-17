@@ -5,10 +5,12 @@
   <title>ระบบ BMI นักเรียน - เวอร์ชันสมบูรณ์</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body class="bg-gray-100 p-4">
 <div class="max-w-7xl mx-auto bg-white p-6 rounded shadow">
   <h1 class="text-3xl font-bold text-center mb-6">ระบบค้นหาข้อมูล BMI นักเรียน</h1>
+
   <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
     <input list="student_id_list" id="searchId" placeholder="เลขประจำตัว" class="p-2 border rounded" />
     <input list="name_list" id="searchName" placeholder="ชื่อ" class="p-2 border rounded" />
@@ -37,6 +39,27 @@
       <tbody id="dataBody"></tbody>
     </table>
   </div>
+
+  <!-- ปุ่มเปิดกราฟ -->
+  <div class="my-6 text-center">
+    <button onclick="toggleChart()" class="bg-blue-600 text-white px-4 py-2 rounded">
+      แสดง/ซ่อนกราฟข้อมูล BMI
+    </button>
+  </div>
+
+  <!-- กราฟแปลผล BMI ตามชั้น/ห้อง -->
+  <div id="chartContainer" class="hidden bg-gray-50 p-4 border rounded">
+    <h2 class="text-xl font-semibold mb-4">กราฟแปลผล BMI ตามชั้น/ห้อง</h2>
+    <div class="grid grid-cols-2 gap-4 mb-4">
+      <select id="filterClass" class="p-2 border rounded" onchange="updateChart()">
+        <option value="">-- เลือกชั้น --</option>
+      </select>
+      <select id="filterRoom" class="p-2 border rounded" onchange="updateChart()">
+        <option value="">-- เลือกห้อง --</option>
+      </select>
+    </div>
+    <canvas id="resultChart" height="120"></canvas>
+  </div>
 </div>
 
 <datalist id="student_id_list"></datalist>
@@ -50,7 +73,7 @@
 const API_KEY = "AIzaSyD-IbEa-_poD4yLCaS6S3iCFd07U3x54-o";
 const SHEET_ID = "1nR3b0kUrzFgRcGgdn1gF-tz-fZPEG08sbwjJr6H6qIE";
 const SHEET_NAME = "database";
-let allData = [], filteredData = [];
+let allData = [], filteredData = [], chart;
 
 async function fetchData() {
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${SHEET_NAME}?key=${API_KEY}`;
@@ -62,6 +85,7 @@ async function fetchData() {
   allData = rows.slice(1).map(row => Object.fromEntries(headers.map((h, i) => [h, row[i] || ""])));
   renderTable(allData);
   populateDatalists(allData);
+  populateChartFilters(allData);
 }
 
 function renderTable(data) {
@@ -96,6 +120,59 @@ function populateDatalists(data) {
     const datalist = document.getElementById(listId);
     datalist.innerHTML = unique.map(val => `<option value="${val}">`).join("");
   }
+}
+
+function populateChartFilters(data) {
+  const classSelect = document.getElementById("filterClass");
+  const roomSelect = document.getElementById("filterRoom");
+  const classes = [...new Set(data.map(d => d.class))].sort();
+  const rooms = [...new Set(data.map(d => d.room))].sort();
+
+  classes.forEach(cls => {
+    classSelect.innerHTML += `<option value="${cls}">${cls}</option>`;
+  });
+  rooms.forEach(rm => {
+    roomSelect.innerHTML += `<option value="${rm}">${rm}</option>`;
+  });
+}
+
+function toggleChart() {
+  document.getElementById("chartContainer").classList.toggle("hidden");
+  updateChart();
+}
+
+function updateChart() {
+  const selectedClass = document.getElementById("filterClass").value;
+  const selectedRoom = document.getElementById("filterRoom").value;
+
+  const filtered = allData.filter(row => {
+    return (!selectedClass || row.class === selectedClass) &&
+           (!selectedRoom || row.room === selectedRoom);
+  });
+
+  const count = {};
+  filtered.forEach(r => {
+    const label = r.result || "ไม่ระบุ";
+    count[label] = (count[label] || 0) + 1;
+  });
+
+  const ctx = document.getElementById("resultChart");
+  if (chart) chart.destroy();
+  chart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: Object.keys(count),
+      datasets: [{
+        label: 'จำนวนนักเรียน',
+        data: Object.values(count),
+        backgroundColor: '#3b82f6'
+      }]
+    },
+    options: {
+      responsive: true,
+      scales: { y: { beginAtZero: true } }
+    }
+  });
 }
 
 document.querySelectorAll("input").forEach(input => {
