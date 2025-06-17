@@ -8,6 +8,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.5/xlsx.full.min.js"></script>
 </head>
 <body class="bg-gray-100 p-4">
 <div class="max-w-7xl mx-auto bg-white p-6 rounded shadow">
@@ -43,8 +44,16 @@
   </div>
 
   <div class="my-6 text-center">
-    <button onclick="toggleChart()" class="bg-blue-600 text-white px-4 py-2 rounded">แสดง/ซ่อนกราฟข้อมูล BMI</button>
-    <button onclick="generatePDF()" class="bg-green-600 text-white px-4 py-2 rounded ml-2">พิมพ์รายงาน</button>
+    <label for="reportAdvisor" class="block font-semibold mb-2">ชื่อครูผู้ออกรายงาน:</label>
+    <input type="text" id="reportAdvisor" class="p-2 border rounded mb-4 w-full md:w-1/2" placeholder="กรอกชื่อครูผู้รายงาน..." />
+    <br />
+    <button onclick="generatePDF()" class="bg-green-600 text-white px-4 py-2 rounded ml-2">ออกรายงาน PDF</button>
+    <button onclick="exportExcel()" class="bg-blue-600 text-white px-4 py-2 rounded ml-2">ออกรายงาน Excel</button>
+    <button onclick="exportWord()" class="bg-indigo-600 text-white px-4 py-2 rounded ml-2">ออกรายงาน Word</button>
+  </div>
+
+  <div class="my-6 text-center">
+    <button onclick="toggleChart()" class="bg-red-500 text-white px-4 py-2 rounded">แสดง/ซ่อนกราฟข้อมูล BMI</button>
   </div>
 
   <div id="chartContainer" class="hidden bg-gray-50 p-4 border rounded">
@@ -77,16 +86,21 @@ const SHEET_NAME = "database";
 let allData = [], filteredData = [], chart;
 
 async function fetchData() {
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${SHEET_NAME}?key=${API_KEY}`;
-  const res = await fetch(url);
-  const data = await res.json();
-  if (!data.values || data.values.length < 2) return;
-  const rows = data.values;
-  const headers = rows[0];
-  allData = rows.slice(1).map(row => Object.fromEntries(headers.map((h, i) => [h, row[i] || ""])));
-  renderTable(allData);
-  populateDatalists(allData);
-  populateChartFilters(allData);
+  try {
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${SHEET_NAME}?key=${API_KEY}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    if (!data.values || data.values.length < 2) return;
+    const rows = data.values;
+    const headers = rows[0];
+    allData = rows.slice(1).map(row => Object.fromEntries(headers.map((h, i) => [h, row[i] || ""])));
+    renderTable(allData);
+    populateDatalists(allData);
+    populateChartFilters(allData);
+  } catch (err) {
+    alert("เกิดข้อผิดพลาดในการโหลดข้อมูล");
+    console.error(err);
+  }
 }
 
 function renderTable(data) {
@@ -128,23 +142,20 @@ function populateChartFilters(data) {
   const roomSelect = document.getElementById("filterRoom");
   const classes = [...new Set(data.map(d => d.class))].sort();
   const rooms = [...new Set(data.map(d => d.room))].sort();
-  classes.forEach(cls => {
-    classSelect.innerHTML += `<option value="${cls}">${cls}</option>`;
-  });
-  rooms.forEach(rm => {
-    roomSelect.innerHTML += `<option value="${rm}">${rm}</option>`;
-  });
+  classes.forEach(cls => classSelect.innerHTML += `<option value="${cls}">${cls}</option>`);
+  rooms.forEach(rm => roomSelect.innerHTML += `<option value="${rm}">${rm}</option>`);
 }
 
 function toggleChart() {
-  document.getElementById("chartContainer").classList.toggle("hidden");
-  updateChart();
+  const container = document.getElementById("chartContainer");
+  container.classList.toggle("hidden");
+  if (!container.classList.contains("hidden")) updateChart();
 }
 
 function updateChart() {
   const selectedClass = document.getElementById("filterClass").value;
   const selectedRoom = document.getElementById("filterRoom").value;
-  const filtered = allData.filter(row => (!selectedClass || row.class === selectedClass) && (!selectedRoom || row.room === selectedRoom));
+  const filtered = filteredData.filter(row => (!selectedClass || row.class === selectedClass) && (!selectedRoom || row.room === selectedRoom));
   const count = {};
   filtered.forEach(r => {
     const label = r.result || "ไม่ระบุ";
@@ -154,10 +165,7 @@ function updateChart() {
   if (chart) chart.destroy();
   chart = new Chart(ctx, {
     type: 'bar',
-    data: {
-      labels: Object.keys(count),
-      datasets: [{ label: 'จำนวนนักเรียน', data: Object.values(count), backgroundColor: '#3b82f6' }]
-    },
+    data: { labels: Object.keys(count), datasets: [{ label: 'จำนวนนักเรียน', data: Object.values(count), backgroundColor: '#3b82f6' }] },
     options: { responsive: true, scales: { y: { beginAtZero: true } } }
   });
 }
@@ -171,9 +179,7 @@ function generatePDF() {
   doc.text("โรงเรียนลำปาววิทยาคม", 105, 20, { align: "center" });
   doc.setFontSize(12);
   doc.text(`วันที่พิมพ์รายงาน: ${now}`, 105, 28, { align: "center" });
-  if (logo && logo.src.startsWith("data:image")) {
-    doc.addImage(logo.src, "PNG", 10, 10, 25, 25);
-  }
+  if (logo && logo.src.startsWith("data:image")) doc.addImage(logo.src, "PNG", 10, 10, 25, 25);
   const tableData = filteredData.map(r => [r.student_id, r.name, r.class, r.room, r.weight, r.height, r.bmi, r.result]);
   doc.autoTable({
     startY: 40,
@@ -181,11 +187,32 @@ function generatePDF() {
     body: tableData,
     styles: { fontSize: 10 }
   });
-  const advisor = filteredData[0]?.advisor_1 || "................................";
+  const advisor = document.getElementById("reportAdvisor").value || "................................";
   const y = doc.lastAutoTable.finalY + 20;
   doc.text(`ลงชื่อครูที่ปรึกษา: ${advisor}`, 20, y);
   doc.text("..............................................................", 20, y + 10);
   doc.save("รายงานข้อมูลนักเรียน.pdf");
+}
+
+function exportExcel() {
+  const ws = XLSX.utils.json_to_sheet(filteredData);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "รายงานนักเรียน");
+  XLSX.writeFile(wb, "รายงานข้อมูลนักเรียน.xlsx");
+}
+
+function exportWord() {
+  let content = "<h2>รายงานข้อมูลนักเรียน</h2><table border='1' style='border-collapse: collapse;'><tr><th>เลขประจำตัว</th><th>ชื่อ</th><th>ชั้น</th><th>ห้อง</th><th>น้ำหนัก</th><th>ส่วนสูง</th><th>BMI</th><th>แปลผล</th></tr>";
+  filteredData.forEach(r => {
+    content += `<tr><td>${r.student_id}</td><td>${r.name}</td><td>${r.class}</td><td>${r.room}</td><td>${r.weight}</td><td>${r.height}</td><td>${r.bmi}</td><td>${r.result}</td></tr>`;
+  });
+  content += "</table>";
+  const blob = new Blob(["<html><body>" + content + "</body></html>"], { type: "application/msword" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "รายงานข้อมูลนักเรียน.doc";
+  link.click();
 }
 
 document.querySelectorAll("input").forEach(input => {
