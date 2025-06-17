@@ -33,7 +33,7 @@
   </div>
 
   <!-- ปรับให้เรียงปุ่มแนวนอน อยู่ด้านบนตาราง -->
-  <div class="row g-2 mb-4 align-items-end">
+<div class="row g-2 mb-4 align-items-end">
     <div class="col-md-3">
       <label for="reportAdvisor" class="form-label">ชื่อครูผู้ออกรายงาน:</label>
       <input type="text" id="reportAdvisor" class="form-control" placeholder="กรอกชื่อครูผู้รายงาน..." />
@@ -174,11 +174,13 @@ function populateChartFilters(data) {
     <canvas id="resultChart" height="100"></canvas>
   </div>
 </div>
+<script>
 function toggleChart() {
   const container = document.getElementById("chartContainer");
   if (!container) return;
   container.classList.toggle("d-none");
 }
+</script>
 function updateChart() {
   const selectedClass = document.getElementById("filterClass").value;
   const selectedRoom = document.getElementById("filterRoom").value;
