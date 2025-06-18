@@ -220,25 +220,26 @@ function toggleChart() {
     console.error("Element with ID 'chartContainer' not found.");
   }
 }
-
 function updateChart() {
+  Chart.register(ChartDataLabels); // ✅ เพิ่มตรงนี้
+
   const selectedClass = document.getElementById("filterClass").value;
   const selectedRoom = document.getElementById("filterRoom").value;
+
   const filtered = filteredData.filter(row =>
     (!selectedClass || row.class === selectedClass) &&
     (!selectedRoom || row.room === selectedRoom)
   );
-  // สร้าง count
-const count = {};
-filtered.forEach(r => {
-  const label = (r.result || "ไม่ระบุ").trim();
-  count[label] = (count[label] || 0) + 1;
-});
-// จัดเรียง
-let sortedEntries = Object.entries(count).map(([label, value]) => [label.trim(), value]);
-sortedEntries.sort((a, b) => b[1] - a[1]);  // มาก → น้อย
-  
-  // ✅ ต้องอยู่หลังจากที่ count ถูกเติมข้อมูลแล้ว
+
+  const count = {};
+  filtered.forEach(r => {
+    const label = (r.result || "ไม่ระบุ").trim();
+    count[label] = (count[label] || 0) + 1;
+  });
+
+  let sortedEntries = Object.entries(count).map(([label, value]) => [label.trim(), value]);
+  sortedEntries.sort((a, b) => b[1] - a[1]);
+
   const resultColors = {
     "น้ำหนักน้อยเกินไป": "#f87171",
     "น้ำหนักปกติ": "#34d399",
@@ -248,43 +249,41 @@ sortedEntries.sort((a, b) => b[1] - a[1]);  // มาก → น้อย
     "ไม่ระบุ": "#cbd5e1"
   };
 
-// เตรียมข้อมูลสำหรับกราฟ
-const labels = sortedEntries.map(([label]) => label);
-const data = sortedEntries.map(([_, value]) => value);
-const backgroundColors = labels.map(label => resultColors[label.trim()] || "#a1a1aa");
+  const labels = sortedEntries.map(([label]) => label);
+  const data = sortedEntries.map(([_, value]) => value);
+  const backgroundColors = labels.map(label => resultColors[label.trim()] || "#a1a1aa");
 
-<script>
-  Chart.register(ChartDataLabels);
-    const ctx = document.getElementById("resultChart").getContext("2d");
-  const chart = new Chart(ctx, {
-    type: "bar",
+  const ctx = document.getElementById("resultChart");
+  if (chart) chart.destroy();
+
+  chart = new Chart(ctx, {
+    type: 'bar',
     data: {
-      labels: ["A", "B", "C"],
+      labels: labels,
       datasets: [{
-        label: "จำนวน",
-        data: [10, 20, 30],
-        backgroundColor: ["#f87171", "#34d399", "#facc15"]
+        label: 'จำนวนนักเรียน',
+        data: data,
+        backgroundColor: backgroundColors
       }]
     },
     options: {
+      responsive: true,
       plugins: {
         datalabels: {
-          color: '#000',
           anchor: 'end',
           align: 'top',
-          formatter: (value) => value
+          color: '#000',
+          font: { weight: 'bold' },
+          formatter: value => value
         }
       },
-      responsive: true,
       scales: {
         y: { beginAtZero: true }
       }
-    },
-    plugins: [ChartDataLabels] // <- ต้องเพิ่มตรงนี้ด้วย!
+    }
   });
-  </script>
 }
-
+  
 function confirmExport(type) {
   const advisor = document.getElementById("reportAdvisor").value.trim();
   const date = document.getElementById("reportDate").value.trim();
