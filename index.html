@@ -299,13 +299,11 @@ function confirmExport(type) {
 }
 
 function exportExcel(advisor, date) {
-  // ใช้ date แทนการกรอง class/room
-  const filtered = allData; // <== หรือคุณสามารถกรองตาม field วันที่ได้ที่นี่
+  const filtered = allData; // ถ้ามีการกรองตามวันที่ ให้กรองตรงนี้
   const wb = XLSX.utils.book_new();
   const wsData = [
     ["โรงเรียนลำปาววิทยาคม"],
-    ["รายงานข้อมูล BMI ชั้น " + className],
-    ["วันที่ออกรายงาน: " + date],
+    ["รายงานข้อมูล BMI ณ วันที่ " + date],
     ["ผู้ออกรายงาน: " + advisor],
     [],
     ["เลขประจำตัว", "ชื่อ", "ชั้น", "ห้อง", "น้ำหนัก", "ส่วนสูง", "BMI", "แปลผล"]
@@ -317,12 +315,10 @@ function exportExcel(advisor, date) {
   XLSX.utils.book_append_sheet(wb, ws, "รายงาน BMI");
   XLSX.writeFile(wb, `รายงาน BMI_${date}.xlsx`);
 }
-
 function exportWord(advisor, date) {
-  // ใช้ date แทนการกรอง class/room
-  const filtered = allData; // <== หรือคุณสามารถกรองตาม field วันที่ได้ที่นี่
+  const filtered = allData;
   let content = `<h2>โรงเรียนลำปาววิทยาคม</h2>`;
-  content += `<p><strong>รายงานข้อมูล BMI ชั้น ${className} ห้อง ${room}</strong></p>`;
+  content += `<p><strong>รายงานข้อมูล BMI ณ วันที่ ${date}</strong></p>`;
   content += `<p>ผู้ออกรายงาน: ${advisor}</p>`;
   content += `<table border="1" cellspacing="0" cellpadding="5">
     <thead><tr>
