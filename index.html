@@ -225,11 +225,13 @@ function toggleChart() {
 function updateChart() {
   const selectedClass = document.getElementById("filterClass").value;
   const selectedRoom = document.getElementById("filterRoom").value;
-
   const filtered = filteredData.filter(row =>
     (!selectedClass || row.class === selectedClass) &&
     (!selectedRoom || row.room === selectedRoom)
   );
+  <script>
+  // สมัคร plugin
+  Chart.register(ChartDataLabels);
   // สร้าง count
 const count = {};
 filtered.forEach(r => {
@@ -249,11 +251,6 @@ sortedEntries.sort((a, b) => b[1] - a[1]);  // มาก → น้อย
     "โรคอ้วนระดับ 2 / อันตราย": "#f43f5e",
     "ไม่ระบุ": "#cbd5e1"
   };
-<script>
-  // ⬇️ ต้องเพิ่มไว้ตรงนี้ ก่อนใช้งาน ChartDataLabels
-  Chart.register(ChartDataLabels);
-
-  let chart;
 
 // เตรียมข้อมูลสำหรับกราฟ
 const labels = sortedEntries.map(([label]) => label);
