@@ -24,6 +24,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.5/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <style>
+  Chart.register(ChartDataLabels);
     body, table, input, button, select {
       font-family: Arial, sans-serif !important;
     }
@@ -221,7 +222,6 @@ function toggleChart() {
   }
 }
 
-
 function updateChart() {
   const selectedClass = document.getElementById("filterClass").value;
   const selectedRoom = document.getElementById("filterRoom").value;
@@ -229,9 +229,6 @@ function updateChart() {
     (!selectedClass || row.class === selectedClass) &&
     (!selectedRoom || row.room === selectedRoom)
   );
-<script>
-  // สมัคร plugin
-  Chart.register(ChartDataLabels);
   // สร้าง count
 const count = {};
 filtered.forEach(r => {
@@ -279,7 +276,6 @@ chart = new Chart(ctx, {
     plugins: [ChartDataLabels]
   });
 }
-</script>
 function confirmExport(type) {
   const advisor = document.getElementById("reportAdvisor").value.trim();
   const date = document.getElementById("reportDate").value.trim();
