@@ -24,7 +24,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.5/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <style>
-  Chart.register(ChartDataLabels);
     body, table, input, button, select {
       font-family: Arial, sans-serif !important;
     }
@@ -257,25 +256,26 @@ const backgroundColors = labels.map(label => resultColors[label.trim()] || "#a1a
   const ctx = document.getElementById("resultChart");
   if (chart) chart.destroy();
 
-chart = new Chart(ctx, {
+const ctx = document.getElementById("resultChart");
+  if (chart) chart.destroy();
+
+  chart = new Chart(ctx, {
     type: 'bar',
-    data: { labels, datasets: [{ label: 'จำนวนนักเรียน', data, backgroundColor: backgroundColors }] },
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'จำนวนนักเรียน',
+        data: data,
+        backgroundColor: backgroundColors
+      }]
+    },
     options: {
       responsive: true,
-      scales: { y: { beginAtZero: true } },
-      plugins: {
-        datalabels: {
-          anchor: 'end',
-          align: 'top',
-          formatter: (val) => val,
-          color: '#000',
-          font: { weight: 'bold', size: 12 }
-        }
-      }
-    },
-    plugins: [ChartDataLabels]
+      scales: { y: { beginAtZero: true } }
+    }
   });
 }
+
 function confirmExport(type) {
   const advisor = document.getElementById("reportAdvisor").value.trim();
   const date = document.getElementById("reportDate").value.trim();
