@@ -221,8 +221,10 @@ function toggleChart() {
   }
 }
 
-
 function updateChart() {
+
+  Chart.register(ChartDataLabels); // ✅ เพิ่มตรงนี้
+  
   const selectedClass = document.getElementById("filterClass").value;
   const selectedRoom = document.getElementById("filterRoom").value;
 
@@ -274,7 +276,6 @@ const backgroundColors = labels.map(label => resultColors[label.trim()] || "#a1a
     }
   });
 }
-
   
 function confirmExport(type) {
   const advisor = document.getElementById("reportAdvisor").value.trim();
@@ -321,28 +322,36 @@ function exportExcel(advisor, date) {
 }
 
 
-function exportWord(advisor, date) {
-  const filtered = allData;
+function exportWord(advisor, date, selectedClass, selectedRoom) {
+  const filtered = allData.filter(row =>
+    (!selectedClass || row.class === selectedClass) &&
+    (!selectedRoom || row.room === selectedRoom)
+  );
+
   let content = `<h2>โรงเรียนลำปาววิทยาคม</h2>`;
   content += `<p><strong>รายงานข้อมูล BMI ณ วันที่ ${date}</strong></p>`;
+  content += `<p>ชั้น: ${selectedClass || "-"} ห้อง: ${selectedRoom || "-"}</p>`;
   content += `<p>ผู้ออกรายงาน: ${advisor}</p>`;
   content += `<table border="1" cellspacing="0" cellpadding="5">
     <thead><tr>
       <th>เลขประจำตัว</th><th>ชื่อ</th><th>ชั้น</th><th>ห้อง</th>
       <th>น้ำหนัก</th><th>ส่วนสูง</th><th>BMI</th><th>แปลผล</th>
     </tr></thead><tbody>`;
+
   filtered.forEach(r => {
     content += `<tr><td>${r.student_id}</td><td>${r.name}</td><td>${r.class}</td><td>${r.room}</td>
       <td>${r.weight}</td><td>${r.height}</td><td>${r.bmi}</td><td>${r.result}</td></tr>`;
   });
+
   content += `</tbody></table>`;
   const blob = new Blob([`<html><body>${content}</body></html>`], { type: "application/msword" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = `รายงาน BMI_${date}.doc`;
+  link.download = `รายงาน BMI_${date}_${selectedClass}_${selectedRoom}.doc`;
   link.click();
 }
+
 
 </script>
 <script>
@@ -373,3 +382,4 @@ fetchData();
   
 </body>
 </html>
+
