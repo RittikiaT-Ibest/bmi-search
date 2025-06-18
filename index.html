@@ -229,7 +229,7 @@ function updateChart() {
     (!selectedClass || row.class === selectedClass) &&
     (!selectedRoom || row.room === selectedRoom)
   );
-  <script>
+<script>
   // สมัคร plugin
   Chart.register(ChartDataLabels);
   // สร้าง count
@@ -279,7 +279,7 @@ chart = new Chart(ctx, {
     plugins: [ChartDataLabels]
   });
 }
-
+</script>
 function confirmExport(type) {
   const advisor = document.getElementById("reportAdvisor").value.trim();
   const date = document.getElementById("reportDate").value.trim();
