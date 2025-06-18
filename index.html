@@ -276,8 +276,8 @@ const backgroundColors = labels.map(label => resultColors[label.trim()] || "#a1a
 function confirmExport(type) {
   const advisor = document.getElementById("reportAdvisor").value.trim();
   const date = document.getElementById("reportDate").value.trim();
-  const selectedClass = document.getElementById("filterClass").value;
-  const selectedRoom = document.getElementById("filterRoom").value;
+  const selectedClass = document.getElementById("filterClass").value.trim();
+  const selectedRoom = document.getElementById("filterRoom").value.trim();
 
   if (!advisor || !date) {
     Swal.fire("กรุณากรอกข้อมูลให้ครบ", "ชื่อครู และวันที่", "warning");
@@ -286,7 +286,7 @@ function confirmExport(type) {
 
   Swal.fire({
     title: "ยืนยันการออกรายงาน?",
-    html: `<strong>ครู:</strong> ${advisor}<br><strong>วันที่:</strong> ${date}<br><strong>ชั้น:</strong> ${selectedClass || "-"} ห้อง: ${selectedRoom || "-"}`,
+    html: `<strong>ครู:</strong> ${advisor}<br><strong>วันที่:</strong> ${date}<br><strong>ชั้น:</strong> ${selectedClass || "-"} <strong>ห้อง:</strong> ${selectedRoom || "-"}`,
     icon: "question",
     showCancelButton: true,
     confirmButtonText: "ตกลง",
@@ -301,10 +301,9 @@ function confirmExport(type) {
 
 function exportExcel(advisor, date, selectedClass, selectedRoom) {
   const filtered = allData.filter(row =>
-    (!selectedClass || row.class === selectedClass) &&
-    (!selectedRoom || row.room === selectedRoom)
-  );
-
+  (!selectedClass || row.class === selectedClass) &&
+  (!selectedRoom || row.room === selectedRoom)
+);
   const wb = XLSX.utils.book_new();
   const wsData = [
     ["โรงเรียนลำปาววิทยาคม"],
