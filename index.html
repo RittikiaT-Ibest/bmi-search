@@ -272,71 +272,98 @@ const backgroundColors = labels.map(label => resultColors[label.trim()] || "#a1a
       scales: { y: { beginAtZero: true } }
     }
   });
-}
-
-  
+}  
 function confirmExport(type) {
   const advisor = document.getElementById("reportAdvisor").value.trim();
-  const date = document.getElementById("reportDate").value.trim(); // แทน class+room
+  const date = document.getElementById("reportDate").value.trim();
+  const selectedClass = document.getElementById("filterClass").value;
+  const selectedRoom = document.getElementById("filterRoom").value;
+
   if (!advisor || !date) {
     Swal.fire("กรุณากรอกข้อมูลให้ครบ", "ชื่อครู และวันที่", "warning");
     return;
   }
 
- Swal.fire({
+  Swal.fire({
     title: "ยืนยันการออกรายงาน?",
-    html: `<strong>ครู:</strong> ${advisor}<br><strong>วันที่:</strong> ${date}`,
+    html: `<strong>ครู:</strong> ${advisor}<br><strong>วันที่:</strong> ${date}<br><strong>ชั้น:</strong> ${selectedClass || "-"} ห้อง: ${selectedRoom || "-"}`,
     icon: "question",
     showCancelButton: true,
     confirmButtonText: "ตกลง",
     cancelButtonText: "ยกเลิก"
   }).then(result => {
     if (result.isConfirmed) {
-      if (type === "excel") exportExcel(advisor, date);
-      else if (type === "word") exportWord(advisor, date);
+      if (type === "excel") exportExcel(advisor, date, selectedClass, selectedRoom);
+      else if (type === "word") exportWord(advisor, date, selectedClass, selectedRoom);
     }
   });
 }
 
-function exportExcel(advisor, date) {
-  const filtered = allData; // ถ้ามีการกรองตามวันที่ ให้กรองตรงนี้
+function exportExcel(advisor, date, selectedClass, selectedRoom) {
+  const filtered = allData.filter(row =>
+    (!selectedClass || row.class === selectedClass) &&
+    (!selectedRoom || row.room === selectedRoom)
+  );
+
   const wb = XLSX.utils.book_new();
   const wsData = [
     ["โรงเรียนลำปาววิทยาคม"],
-    ["รายงานข้อมูล BMI ณ วันที่ " + date],
+    [`รายงานข้อมูล BMI ชั้น ${selectedClass || "-"} ห้อง ${selectedRoom || "-"} ณ วันที่ ${date}`],
     ["ผู้ออกรายงาน: " + advisor],
     [],
     ["เลขประจำตัว", "ชื่อ", "ชั้น", "ห้อง", "น้ำหนัก", "ส่วนสูง", "BMI", "แปลผล"]
   ];
+
   filtered.forEach(row => {
     wsData.push([row.student_id, row.name, row.class, row.room, row.weight, row.height, row.bmi, row.result]);
   });
+
   const ws = XLSX.utils.aoa_to_sheet(wsData);
   XLSX.utils.book_append_sheet(wb, ws, "รายงาน BMI");
-  XLSX.writeFile(wb, `รายงาน BMI_${date}.xlsx`);
+  XLSX.writeFile(wb, `รายงาน BMI_${date}_${selectedClass}_${selectedRoom}.xlsx`);
 }
-function exportWord(advisor, date) {
-  const filtered = allData;
-  let content = `<h2>โรงเรียนลำปาววิทยาคม</h2>`;
-  content += `<p><strong>รายงานข้อมูล BMI ณ วันที่ ${date}</strong></p>`;
-  content += `<p>ผู้ออกรายงาน: ${advisor}</p>`;
-  content += `<table border="1" cellspacing="0" cellpadding="5">
-    <thead><tr>
-      <th>เลขประจำตัว</th><th>ชื่อ</th><th>ชั้น</th><th>ห้อง</th>
-      <th>น้ำหนัก</th><th>ส่วนสูง</th><th>BMI</th><th>แปลผล</th>
-    </tr></thead><tbody>`;
+
+function exportWord(advisor, date, selectedClass, selectedRoom) {
+  const filtered = allData.filter(row =>
+    (!selectedClass || row.class === selectedClass) &&
+    (!selectedRoom || row.room === selectedRoom)
+  );
+
+  const logoBase64 = document.getElementById("schoolLogo").src;
+  const chartCanvas = document.getElementById("resultChart");
+  const chartImage = chartCanvas.toDataURL("image/png");
+
+  let content = `
+    <html><body>
+    <img src="${logoBase64}" style="height:80px;" />
+    <h2>โรงเรียนลำปาววิทยาคม</h2>
+    <p><strong>รายงานข้อมูล BMI</strong></p>
+    <p>วันที่: ${date}</p>
+    <p>ชั้น: ${selectedClass || "-"} ห้อง: ${selectedRoom || "-"}</p>
+    <p>ผู้ออกรายงาน: ${advisor}</p>
+    <img src="${chartImage}" style="width:100%; max-height:300px; margin-top:20px;" />
+    <table border="1" cellspacing="0" cellpadding="5" style="margin-top:20px;">
+      <thead><tr>
+        <th>เลขประจำตัว</th><th>ชื่อ</th><th>ชั้น</th><th>ห้อง</th>
+        <th>น้ำหนัก</th><th>ส่วนสูง</th><th>BMI</th><th>แปลผล</th>
+      </tr></thead>
+      <tbody>`;
+
   filtered.forEach(r => {
     content += `<tr><td>${r.student_id}</td><td>${r.name}</td><td>${r.class}</td><td>${r.room}</td>
       <td>${r.weight}</td><td>${r.height}</td><td>${r.bmi}</td><td>${r.result}</td></tr>`;
   });
-  content += `</tbody></table>`;
-  const blob = new Blob([`<html><body>${content}</body></html>`], { type: "application/msword" });
+
+  content += `</tbody></table></body></html>`;
+
+  const blob = new Blob([content], { type: "application/msword" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = `รายงาน BMI_${date}.doc`;
+  link.download = `รายงาน BMI_${date}_${selectedClass}_${selectedRoom}.doc`;
   link.click();
 }
+
 </script>
 <script>
 document.querySelectorAll("input").forEach(input => {
